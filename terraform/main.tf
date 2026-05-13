@@ -61,3 +61,42 @@ resource "aws_flow_log" "main" {
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
 }
+
+# SNS Topic
+resource "aws_sns_topic" "main" {
+  name = "${var.project_name}-alerts"
+}
+
+# SNS Email Subscription
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.main.arn
+  protocol  = "email"
+  endpoint  = "morgan.ifidon@googlemail.com"
+}
+
+# CloudWatch Metric Filter
+resource "aws_cloudwatch_log_metric_filter" "rejects" {
+  name           = "${var.project_name}-rejects"
+  log_group_name = aws_cloudwatch_log_group.flow_logs.name
+  pattern        = "[version, account, eni, source, destination, srcport, destport, protocol, packets, bytes, windowstart, windowend, action=REJECT, flowlogstatus]"
+
+  metric_transformation {
+    name      = "RejectedPackets"
+    namespace = "${var.project_name}/FlowLogs"
+    value     = "1"
+  }
+}
+
+# CloudWatch Alarm
+resource "aws_cloudwatch_metric_alarm" "reject_spike" {
+  alarm_name          = "${var.project_name}-reject-spike"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "RejectedPackets"
+  namespace           = "${var.project_name}/FlowLogs"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 100
+  alarm_description   = "Triggers when rejected packets exceed 100 in 5 minutes"
+  alarm_actions       = [aws_sns_topic.main.arn]
+}
