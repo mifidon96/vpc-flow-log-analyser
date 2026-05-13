@@ -71,7 +71,7 @@ resource "aws_sns_topic" "main" {
 resource "aws_sns_topic_subscription" "email" {
   topic_arn = aws_sns_topic.main.arn
   protocol  = "email"
-  endpoint  = "morgan.ifidon@googlemail.com"
+  endpoint  = "test@googlemail.com"
 }
 
 # CloudWatch Metric Filter
