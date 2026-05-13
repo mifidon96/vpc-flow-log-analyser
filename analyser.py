@@ -60,4 +60,9 @@ def analyse(log_group, hours):
     for ip, count in Counter(p["srcaddr"] for p in rejects).most_common(5):
         print(f"  {ip:<20}  —  {count} hits")
 
-if __name
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log-group", required=True, help="CloudWatch log group name")
+    parser.add_argument("--hours", type=int, default=1, help="Hours of logs to analyse")
+    args = parser.parse_args()
+    analyse(args.log_group, args.hours)
